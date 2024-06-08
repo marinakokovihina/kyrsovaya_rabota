@@ -19,8 +19,22 @@ let instances = [];
 function loadEnv(){
     instances = []
     targets_count = document.getElementById("targets")
-    instances.push(new Targets(targets_count.value));
-    instances.push(new Robot());
+
+    targets = new Targets(targets_count.value)
+    input_mapped_positions = []
+    targets.targets.forEach(element => {
+        input_mapped_positions.push([element.x, element.y])
+    })
+    shortest_path = findShortestPath(input_mapped_positions)
+    console.log(shortest_path)
+    shortest_targets = []
+    shortest_path.forEach(element => {
+        shortest_targets.push(new Pos(element[0], element[1]))
+    })
+    robot = new Robot(shortest_targets)
+
+    instances.push(targets);
+    instances.push(robot);
 }
 
 function Pos(x, y){
@@ -28,14 +42,14 @@ function Pos(x, y){
     this.y = y;
 }
 
-function Robot(){
-    this.targets = [new Pos(350, 350), new Pos(450, 350)]
+function Robot(targets){
+    this.targets = targets
     this.current_target_idx = 0
 
     this.position = new Pos(350, 0)
 
-    delta_x = (this.targets[this.current_target_idx].x  - this.position.x) / 100
-    delta_y = (this.targets[this.current_target_idx].y - this.position.y) / 100
+    delta_x = (this.targets[this.current_target_idx].x  - this.position.x) / 50
+    delta_y = (this.targets[this.current_target_idx].y - this.position.y) / 50
     this.delta = new Pos(delta_x, delta_y)
 
     this.size = 15
@@ -43,16 +57,16 @@ function Robot(){
 
 Robot.prototype.draw = function(){
     ctx.fillStyle = "#08bd50";
-    if (this.targets[this.current_target_idx].x - this.position.x <= this.delta.x &&
-        this.targets[this.current_target_idx].y - this.position.y <= this.delta.y) {
+    if (Math.sqrt(Math.pow(this.targets[this.current_target_idx].x - this.position.x, 2)+
+        Math.pow(this.targets[this.current_target_idx].y - this.position.y, 2)) < 1) {
         this.current_target_idx++
         console.log(this.targets.length - 1, this.current_target_idx)
         if (this.current_target_idx == this.targets.length) {
             this.current_target_idx = 0
             this.targets = [new Pos(350, 0)]
         }
-        delta_x = (this.targets[this.current_target_idx].x  - this.position.x) / 100
-        delta_y = (this.targets[this.current_target_idx].y - this.position.y) / 100
+        delta_x = (this.targets[this.current_target_idx].x  - this.position.x) / 50
+        delta_y = (this.targets[this.current_target_idx].y - this.position.y) / 50
         this.delta = new Pos(delta_x, delta_y)
     }
     this.position.x = this.position.x + this.delta.x;
@@ -83,4 +97,43 @@ function update()
     instances.forEach(instance => {
         instance.draw();
     });
+}
+
+function calculateDistance(point1, point2) {
+    const dx = point1[0] - point2[0];
+    const dy = point1[1] - point2[1];
+    
+    return Math.sqrt(dx*dx + dy*dy);
+}
+    
+function findShortestPath(coordinates) {
+    const findPermutations = arr => {
+        if (arr.length === 1) {
+            return [arr];
+        }
+        return arr.reduce((acc, item, i) => [
+            ...acc,
+            ...findPermutations([...arr.slice(0, i), ...arr.slice(i + 1)]).map(val => [item, ...val])
+        ], []);
+    };
+    
+    const permutations = findPermutations(coordinates);
+    let shortestDistance = Infinity;
+    let shortestPath = [];
+    
+    for (let i = 0; i < permutations.length; i++) {
+        const currentPath = permutations[i];
+        let currentDistance = 0;
+        for (let j = 0; j < currentPath.length - 1; j++) {
+            currentDistance += calculateDistance(currentPath[j], currentPath[j + 1]);
+        }
+        currentDistance += calculateDistance(currentPath[currentPath.length - 1], currentPath[0]);
+    
+        if (currentDistance < shortestDistance) {
+            shortestDistance = currentDistance;
+            shortestPath = currentPath;
+        }
+    }
+    
+    return shortestPath;
 }
