@@ -26,7 +26,6 @@ function loadEnv(){
         input_mapped_positions.push([element.x, element.y])
     })
     shortest_path = findShortestPath(input_mapped_positions)
-    console.log(shortest_path)
     shortest_targets = []
     shortest_path.forEach(element => {
         shortest_targets.push(new Pos(element[0], element[1]))
@@ -60,7 +59,6 @@ Robot.prototype.draw = function(){
     if (Math.sqrt(Math.pow(this.targets[this.current_target_idx].x - this.position.x, 2)+
         Math.pow(this.targets[this.current_target_idx].y - this.position.y, 2)) < 1) {
         this.current_target_idx++
-        console.log(this.targets.length - 1, this.current_target_idx)
         if (this.current_target_idx == this.targets.length) {
             this.current_target_idx = 0
             this.targets = [new Pos(350, 0)]
